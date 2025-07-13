@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Recursion Visualizer with Tree Diagrams 1</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+            color: #2c3e50;
+            min-height: 100vh;
+            overflow-x: auto;
+            background-color: rgb(226, 226, 226);
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: rgb(225, 225, 225);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.7rem;
+            margin-bottom: 10px;
+            color: #000000;
+            font-weight: 600;
+        }
+
+        .header p {
+            color: #919494;
+            font-size: 1.1rem;
+        }
+
+        .controls {
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 1px solid #c0bdbd;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .control-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 25px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        label {
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.9rem;
+        }
+
+        select,
+        input,
+        button {
+            padding: 12px 8px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            background: #f4f4f4;
+            color: #495057;
+            font-size: 18px;
+            transition: all 0.2s ease;
+        }
+
+        select:focus,
+        input:focus {
+            outline: none;
+            border-color: #000000;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        button {
+            background: #bdbdbd;
+            border: 1px solid #ffffff;
+            color: #000000;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 20px;
+            min-width: 120px;
+            transition: all 0.2s ease;
+        }
+
+        #resetBtn:hover:not(:disabled) {
+            background-color: rgb(221, 86, 86);
+        }
+
+        #nextStepBtn:hover:not(:disabled) {
+            background-color: rgb(96, 150, 237);
+        }
+
+        /* #visulizeBtn:hover:not(:disabled) {
+            background-color: rgb(30, 220, 55);
+        } */
+
+
+        /* button:hover:not(:disabled) {
+            background: #69d6bf;
+            border-color: #8aff57;
+        } */
+
+        button:disabled {
+            background: #e9ecef;
+            border-color: #e9ecef;
+            color: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .tree-container {
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 30px;
+            margin-bottom: 30px;
+            min-height: 450px;
+            position: relative;
+            overflow: auto;
+            border: 1px solid #b4afaf;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .tree-svg {
+            width: 100%;
+            height: 100%;
+            min-height: 400px;
+        }
+
+        .tree-node {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .tree-node circle {
+            fill: #f8f9fa;
+            stroke: #6c757d;
+            stroke-width: 2;
+            transition: all 0.2s ease;
+        }
+
+        .tree-node.current circle {
+            fill: #3b82f6;
+            stroke: #2563eb;
+            stroke-width: 3;
+        }
+
+        .tree-node.completed circle {
+            fill: #10b981;
+            stroke: #059669;
+            stroke-width: 2;
+        }
+
+        .tree-node text {
+            fill: #495057;
+            font-size: 8.5px;
+            font-weight: 600;
+            text-anchor: middle;
+            dominant-baseline: central;
+            pointer-events: none;
+        }
+
+        .tree-node.current text {
+            fill: #ffffff;
+        }
+
+        .tree-node.completed text {
+            fill: #ffffff;
+        }
+
+        .tree-edge {
+            stroke: #adb5bd;
+            stroke-width: 2;
+            fill: none;
+            transition: all 0.2s ease;
+        }
+
+        .tree-edge.active {
+            stroke: #3b82f6;
+            stroke-width: 3;
+        }
+
+        .info-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .info-card {
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid #e1e8ed;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .info-card h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .info-card p {
+            color: #6c757d;
+            line-height: 1.5;
+        }
+
+        .formula {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 4px;
+            margin-top: 12px;
+            font-family: 'Courier New', monospace;
+            color: #136cc5;
+            font-size: 0.9rem;
+        }
+
+        .step-info {
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 20px;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .step-info h4 {
+            color: #2c3e50;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .step-info p {
+            color: #6c757d;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .control-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .info-panel {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Recursion Visualizer</h1>
+            <p>Explore recursive algorithms through interactive tree diagrams</p>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <div class="input-group">
+                    <label for="algorithm">Algorithm</label>
+                    <select id="algorithm">
+                        <option value="fibonacci">Fibonacci</option>
+                        <option value="factorial">Factorial</option>
+                        <option value="gcd">GCD (Greatest Common Divisor)</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label for="input1" id="input1Label">Value (n)</label>
+                    <input type="number" id="input1" min="0" value="5">
+                </div>
+
+                <div class="input-group hidden" id="input2Group">
+                    <label for="input2">Second Value (b)</label>
+                    <input type="number" id="input2" min="1" value="10">
+                </div>
+            </div>
+
+            <div class="control-group">
+                <button id="visualizeBtn">Visualize Recursion</button>
+                <button id="nextStepBtn" disabled>Next Step</button>
+                <button id="resetBtn" disabled>Reset</button>
+            </div>
+
+            <div id="stepInfo" class="step-info hidden">
+                <h4>Current Step</h4>
+                <p id="stepDescription">Click "Visualize Recursion" to start</p>
+            </div>
+        </div>
+
+        <div class="tree-container">
+            <svg id="treeSvg" class="tree-svg"></svg>
+        </div>
+
+        <div class="info-panel">
+            <div class="info-card">
+                <h3>Fibonacci Sequence</h3>
+                <p>Each number is the sum of the two preceding ones. Demonstrates overlapping subproblems in recursion.
+                </p>
+                <div class="formula">F(n) = F(n-1) + F(n-2)<br>Base: F(0) = 0, F(1) = 1</div>
+            </div>
+            <div class="info-card">
+                <h3>Factorial</h3>
+                <p>The product of all positive integers less than or equal to n. Shows simple linear recursion.</p>
+                <div class="formula">n! = n × (n-1)!<br>Base: 0! = 1</div>
+            </div>
+            <div class="info-card">
+                <h3>Greatest Common Divisor</h3>
+                <p>Euclidean algorithm to find the largest number that divides both inputs without remainder.</p>
+                <div class="formula">GCD(a,b) = GCD(b, a mod b)<br>Base: GCD(a,0) = a</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class RecursionVisualizer {
+            constructor() {
+                this.svg = document.getElementById('treeSvg');
+                this.nodes = [];
+                this.edges = [];
+                this.currentStep = 0;
+                this.recursionSteps = [];
+                this.algorithm = 'fibonacci';
+                this.maxDepth = 6;
+
+                this.initializeEventListeners();
+                this.updateInputs();
+            }
+
+            initializeEventListeners() {
+                document.getElementById('algorithm').addEventListener('change', () => {
+                    this.algorithm = document.getElementById('algorithm').value;
+                    this.updateInputs();
+                    this.reset();
+                });
+
+                document.getElementById('visualizeBtn').addEventListener('click', () => {
+                    this.visualize();
+                });
+
+                document.getElementById('nextStepBtn').addEventListener('click', () => {
+                    this.nextStep();
+                });
+
+                document.getElementById('resetBtn').addEventListener('click', () => {
+                    this.reset();
+                });
+            }
+
+            updateInputs() {
+                const input1Label = document.getElementById('input1Label');
+                const input2Group = document.getElementById('input2Group');
+                const input1 = document.getElementById('input1');
+
+                if (this.algorithm === 'gcd') {
+                    input1Label.textContent = 'First Value (a)';
+                    input2Group.classList.remove('hidden');
+                    input1.value = 24;
+                    document.getElementById('input2').value = 18;
+                } else {
+                    input1Label.textContent = 'Value (n)';
+                    input2Group.classList.add('hidden');
+                    input1.value = 5;
+                }
+            }
+
+            visualize() {
+                const input1 = parseInt(document.getElementById('input1').value);
+                const input2 = parseInt(document.getElementById('input2').value);
+
+                if (isNaN(input1) || (this.algorithm === 'gcd' && isNaN(input2))) {
+                    alert('Please enter valid numbers');
+                    return;
+                }
+
+                this.reset();
+
+                const estimatedDepth = this.estimateDepth(input1, input2);
+                if (estimatedDepth > this.maxDepth) {
+                    const result = this.computeDirect(input1, input2);
+                    this.updateStepInfo(`Input too large for visualization. Result: ${result}`);
+                    return;
+                }
+
+                this.generateRecursionTree(input1, input2);
+                this.renderTree();
+
+                document.getElementById('visualizeBtn').disabled = true;
+                document.getElementById('nextStepBtn').disabled = false;
+                document.getElementById('resetBtn').disabled = false;
+                document.getElementById('stepInfo').classList.remove('hidden');
+
+                this.updateStepInfo('Recursion tree generated. Click "Next Step" to begin stepping through.');
+            }
+
+            estimateDepth(n, m) {
+                switch (this.algorithm) {
+                    case 'fibonacci':
+                        return n;
+                    case 'factorial':
+                        return n;
+                    case 'gcd':
+                        let depth = 0;
+                        while (m !== 0) {
+                            [n, m] = [m, n % m];
+                            depth++;
+                        }
+                        return depth;
+                    default:
+                        return 0;
+                }
+            }
+
+            computeDirect(n, m) {
+                switch (this.algorithm) {
+                    case 'fibonacci':
+                        return this.fibonacci(n);
+                    case 'factorial':
+                        return this.factorial(n);
+                    case 'gcd':
+                        return this.gcd(n, m);
+                }
+            }
+
+            generateRecursionTree(n, m = null) {
+                this.nodes = [];
+                this.edges = [];
+                this.recursionSteps = [];
+
+                let nodeId = 0;
+                const traverse = (value1, value2 = null, depth = 0, parentId = null) => {
+                    const currentId = nodeId++;
+                    let label, result;
+
+                    switch (this.algorithm) {
+                        case 'fibonacci':
+                            label = `F(${value1})`;
+                            result = this.fibonacci(value1);
+                            break;
+                        case 'factorial':
+                            label = `${value1}!`;
+                            result = this.factorial(value1);
+                            break;
+                        case 'gcd':
+                            label = `GCD(${value1},${value2})`;
+                            result = this.gcd(value1, value2);
+                            break;
+                    }
+
+                    const node = {
+                        id: currentId,
+                        label,
+                        result,
+                        depth,
+                        value1,
+                        value2,
+                        x: 0,
+                        y: 0,
+                        visited: false,
+                        completed: false
+                    };
+
+                    this.nodes.push(node);
+                    this.recursionSteps.push({ type: 'call', nodeId: currentId, description: `Calling ${label}` });
+
+                    if (parentId !== null) {
+                        this.edges.push({ from: parentId, to: currentId, active: false });
+                    }
+
+                    if (!this.isBaseCase(value1, value2) && depth < this.maxDepth) {
+                        const children = this.getChildren(value1, value2);
+                        children.forEach(child => {
+                            traverse(child.value1, child.value2, depth + 1, currentId);
+                        });
+                    }
+
+                    this.recursionSteps.push({ type: 'return', nodeId: currentId, description: `${label} returns ${result}` });
+                    return currentId;
+                };
+
+                traverse(n, m);
+            }
+
+            isBaseCase(value1, value2) {
+                if (this.algorithm === 'fibonacci') return value1 <= 1;
+                if (this.algorithm === 'factorial') return value1 <= 1;
+                if (this.algorithm === 'gcd') return value2 === 0;
+                return true;
+            }
+
+            getChildren(value1, value2) {
+                if (this.algorithm === 'fibonacci' && value1 > 1) {
+                    return [{ value1: value1 - 1 }, { value1: value1 - 2 }];
+                } else if (this.algorithm === 'factorial' && value1 > 1) {
+                    return [{ value1: value1 - 1 }];
+                } else if (this.algorithm === 'gcd' && value2 !== 0) {
+                    return [{ value1: value2, value2: value1 % value2 }];
+                }
+                return [];
+            }
+
+            fibonacci(n) {
+                if (n <= 1) return n;
+                return this.fibonacci(n - 1) + this.fibonacci(n - 2);
+            }
+
+            factorial(n) {
+                if (n <= 1) return 1;
+                return n * this.factorial(n - 1);
+            }
+
+            gcd(a, b) {
+                if (b === 0) return a;
+                return this.gcd(b, a % b);
+            }
+
+            renderTree() {
+                this.calculatePositions();
+                this.svg.innerHTML = '';
+
+                const maxX = Math.max(...this.nodes.map(n => n.x)) + 100;
+                const maxY = Math.max(...this.nodes.map(n => n.y)) + 100;
+                this.svg.setAttribute('viewBox', `0 0 ${maxX} ${maxY}`);
+                this.svg.setAttribute('width', maxX);
+                this.svg.setAttribute('height', maxY);
+
+                this.edges.forEach(edge => {
+                    const fromNode = this.nodes.find(n => n.id === edge.from);
+                    const toNode = this.nodes.find(n => n.id === edge.to);
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line.setAttribute('x1', fromNode.x);
+                    line.setAttribute('y1', fromNode.y);
+                    line.setAttribute('x2', toNode.x);
+                    line.setAttribute('y2', toNode.y);
+                    line.classList.add('tree-edge');
+                    line.setAttribute('data-edge-id', `${edge.from}-${edge.to}`);
+                    this.svg.appendChild(line);
+                });
+
+                this.nodes.forEach(node => {
+                    const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                    group.classList.add('tree-node');
+                    group.setAttribute('data-node-id', node.id);
+
+                    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    circle.setAttribute('cx', node.x);
+                    circle.setAttribute('cy', node.y);
+                    circle.setAttribute('r', 25);
+
+                    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    text.setAttribute('x', node.x);
+                    text.setAttribute('y', node.y);
+                    text.textContent = node.label;
+
+                    group.appendChild(circle);
+                    group.appendChild(text);
+                    this.svg.appendChild(group);
+                });
+            }
+
+            calculatePositions() {
+                const depthGroups = {};
+                this.nodes.forEach(node => {
+                    if (!depthGroups[node.depth]) depthGroups[node.depth] = [];
+                    depthGroups[node.depth].push(node);
+                });
+
+                const verticalSpacing = 80;
+                const horizontalSpacing = 100;
+
+                Object.keys(depthGroups).forEach(depth => {
+                    const nodes = depthGroups[depth];
+                    const totalWidth = (nodes.length - 1) * horizontalSpacing;
+                    const startX = 50;
+
+                    nodes.forEach((node, index) => {
+                        node.x = startX + (index * horizontalSpacing) + (totalWidth > 0 ? (500 - totalWidth) / 2 : 250);
+                        node.y = 50 + (parseInt(depth) * verticalSpacing);
+                    });
+                });
+            }
+
+            nextStep() {
+                if (this.currentStep >= this.recursionSteps.length) {
+                    this.updateStepInfo('Recursion complete!');
+                    document.getElementById('nextStepBtn').disabled = true;
+                    return;
+                }
+
+                const step = this.recursionSteps[this.currentStep];
+                const node = this.nodes.find(n => n.id === step.nodeId);
+
+                document.querySelectorAll('.tree-node.current').forEach(el => el.classList.remove('current'));
+                document.querySelectorAll('.tree-edge.active').forEach(el => el.classList.remove('active'));
+
+                const nodeElement = document.querySelector(`[data-node-id="${step.nodeId}"]`);
+
+                if (step.type === 'call') {
+                    if (nodeElement) {
+                        nodeElement.classList.add('current');
+                        const incomingEdge = this.edges.find(e => e.to === step.nodeId);
+                        if (incomingEdge) {
+                            const edgeElement = document.querySelector(`[data-edge-id="${incomingEdge.from}-${incomingEdge.to}"]`);
+                            if (edgeElement) edgeElement.classList.add('active');
+                        }
+                    }
+                } else if (step.type === 'return' && nodeElement) {
+                    nodeElement.classList.add('completed');
+                    nodeElement.classList.remove('current');
+                }
+
+                this.updateStepInfo(step.description);
+                this.currentStep++;
+            }
+
+            updateStepInfo(description) {
+                document.getElementById('stepDescription').textContent = description;
+            }
+
+            reset() {
+                this.currentStep = 0;
+                this.recursionSteps = [];
+                this.nodes = [];
+                this.edges = [];
+                this.svg.innerHTML = '';
+
+                document.getElementById('visualizeBtn').disabled = false;
+                document.getElementById('nextStepBtn').disabled = true;
+                document.getElementById('resetBtn').disabled = true;
+                document.getElementById('stepInfo').classList.add('hidden');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            new RecursionVisualizer();
+        });
+    </script>
+</body>
+
+</html>
